@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sprig — Food delivery prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g900:#0A3B28; --g700:#11704A; --g500:#1DA462; --g300:#8FD9AE;
+  --m100:#E7F5EC; --m50:#F4FBF6; --white:#FFFFFF;
+  --ink:#10261B; --muted:#587064; --line:#D8EADF;
+  --backdrop:#0A3B28; --backdrop-text:#E7F5EC;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --backdrop:#05200F; --backdrop-text:#CFEBDB; }
+}
+:root[data-theme="dark"]{ --backdrop:#05200F; --backdrop-text:#CFEBDB; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--backdrop);font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--g300);outline-offset:2px}
+
+.stage{height:100%;display:flex;align-items:center;justify-content:center;gap:56px;padding:24px}
+.aside{max-width:280px;color:var(--backdrop-text)}
+.aside h1{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;margin:0 0 14px;letter-spacing:-.02em}
+.aside p{margin:0 0 10px;line-height:1.5;opacity:.85}
+.aside .speed{margin-top:20px;display:flex;align-items:center;gap:10px;font-size:14px}
+.switch{width:44px;height:26px;border-radius:13px;background:rgba(255,255,255,.2);position:relative;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--g500)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+
+.phone{position:relative;width:390px;height:min(844px,100%);background:var(--white);border-radius:46px;overflow:hidden;box-shadow:0 0 0 10px #062818,0 30px 80px rgba(0,0,0,.45);flex-shrink:0}
+@media (max-width:760px){
+  .stage{padding:0;gap:0}
+  .aside{display:none}
+  .phone{width:100%;height:100%;border-radius:0;box-shadow:none}
+}
+#view{position:absolute;inset:0}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--white);animation:in .32s cubic-bezier(.2,.8,.2,1)}
+.screen.back{animation:inBack .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes inBack{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.screen,.screen.back{animation:none}}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+
+/* top bars */
+.topbar{display:flex;align-items:center;gap:12px;padding:18px 20px 10px}
+.iconbtn{width:42px;height:42px;border-radius:50%;background:var(--m100);display:grid;place-items:center;flex-shrink:0}
+.iconbtn svg{width:20px;height:20px;stroke:var(--g900);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.topbar h2{font-family:var(--display);font-size:20px;margin:0;font-weight:700}
+
+/* home */
+.hero{background:var(--g700);color:#fff;padding:22px 20px 26px;border-radius:0 0 30px 30px}
+.addr{display:flex;align-items:center;justify-content:space-between}
+.addr small{display:block;opacity:.75;font-size:13px}
+.addr strong{font-size:16px;font-weight:600}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--g300);color:var(--g900);display:grid;place-items:center;font-weight:700}
+.hero h1{font-family:var(--display);font-weight:800;font-size:34px;line-height:1.02;letter-spacing:-.02em;margin:22px 0 18px;max-width:300px}
+.search{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:0 14px;height:52px}
+.search svg{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:2.2;stroke-linecap:round}
+.search input{flex:1;border:0;font:inherit;font-size:16px;color:var(--ink);background:none;outline:none;min-width:0}
+.chips{display:flex;gap:8px;padding:18px 20px 6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);font-weight:600;font-size:14px;white-space:nowrap;background:#fff}
+.chip[aria-pressed="true"]{background:var(--g900);border-color:var(--g900);color:#fff}
+.section-title{font-family:var(--display);font-size:20px;font-weight:700;margin:16px 20px 10px}
+.rlist{padding:0 20px 28px;display:grid;gap:14px}
+.rcard{display:flex;gap:14px;align-items:center;text-align:left;padding:10px;border-radius:22px;background:var(--m50);transition:background .15s}
+.rcard:hover{background:var(--m100)}
+.tile{width:84px;height:84px;border-radius:18px;display:grid;place-items:center;font-size:42px;flex-shrink:0}
+.rcard h3{margin:0 0 3px;font-size:17px;font-weight:700}
+.rcard p{margin:0;color:var(--muted);font-size:14px}
+.meta{display:flex;gap:12px;margin-top:8px;font-size:13px;font-weight:600;color:var(--g700)}
+.empty{padding:30px 20px;color:var(--muted);text-align:center}
+
+/* restaurant */
+.rhead{margin:0 20px;border-radius:26px;padding:22px;color:var(--g900)}
+.rhead .big{font-size:64px;line-height:1}
+.rhead h1{font-family:var(--display);font-size:30px;font-weight:800;margin:12px 0 4px;letter-spacing:-.01em}
+.rhead p{margin:0;font-weight:500;opacity:.8}
+.menu{padding:8px 20px 120px}
+.dish{display:flex;gap:14px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.dish .em{width:62px;height:62px;border-radius:16px;background:var(--m100);display:grid;place-items:center;font-size:32px;flex-shrink:0}
+.dish h4{margin:0 0 3px;font-size:16px}
+.dish p{margin:0 0 6px;font-size:13px;color:var(--muted);line-height:1.4}
+.dish .price{font-weight:700}
+.dish .info{flex:1;min-width:0}
+.add{width:38px;height:38px;border-radius:12px;background:var(--g500);color:#fff;font-size:22px;font-weight:600;display:grid;place-items:center;flex-shrink:0}
+.stepper{display:flex;align-items:center;gap:4px;background:var(--m100);border-radius:12px;padding:3px;flex-shrink:0}
+.stepper button{width:32px;height:32px;border-radius:9px;background:#fff;font-weight:700;font-size:18px;color:var(--g900)}
+.stepper span{min-width:22px;text-align:center;font-weight:700}
+
+.bottombar{position:absolute;left:0;right:0;bottom:0;padding:14px 20px calc(18px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,#fff 70%,rgba(255,255,255,0))}
+.cta{width:100%;height:58px;border-radius:18px;background:var(--g900);color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;transition:transform .1s}
+.cta:active{transform:scale(.98)}
+.cta.center{justify-content:center}
+.cta .count{background:var(--g500);border-radius:9px;padding:3px 10px;font-size:14px}
+.cta.light{background:var(--m100);color:var(--g900)}
+
+/* cart */
+.block{margin:0 20px 16px;padding:16px;border-radius:20px;background:var(--m50)}
+.block h3{margin:0 0 10px;font-size:15px;font-weight:700}
+.line{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;font-size:15px}
+.line.total{font-weight:800;font-size:18px;border-top:1px dashed var(--g300);margin-top:6px;padding-top:12px}
+.line .muted{color:var(--muted)}
+.opt{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#fff;border:1.5px solid var(--line);width:100%;text-align:left;margin-top:8px}
+.opt[aria-checked="true"]{border-color:var(--g500);box-shadow:0 0 0 1px var(--g500)}
+.opt .dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;position:relative}
+.opt[aria-checked="true"] .dot{border-color:var(--g500)}
+.opt[aria-checked="true"] .dot::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--g500)}
+
+/* placing */
+.placing{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 28px}
+.placing h1{font-family:var(--display);font-size:34px;line-height:1.05;margin:0 0 6px;font-weight:800}
+.placing .sub{color:var(--muted);margin:0 0 34px}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:flex;gap:14px;align-items:flex-start;padding-bottom:26px;position:relative;color:var(--muted)}
+.steps li:not(:last-child)::before{content:"";position:absolute;left:15px;top:34px;bottom:4px;width:2px;background:var(--line)}
+.steps li.done::before{background:var(--g500)}
+.steps .n{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:14px;background:#fff;flex-shrink:0;transition:all .3s}
+.steps li.done .n,.steps li.now .n{background:var(--g500);border-color:var(--g500);color:#fff}
+.steps li.now .n{box-shadow:0 0 0 6px var(--m100)}
+.steps li.done,.steps li.now{color:var(--ink)}
+.steps strong{display:block;font-size:16px}
+.steps small{font-size:14px}
+
+/* tracking */
+.map{position:relative;height:46%;min-height:280px;background:var(--m100);flex-shrink:0}
+.map svg{width:100%;height:100%;display:block}
+.map .topbar{position:absolute;top:0;left:0;right:0}
+.map .iconbtn{background:#fff;box-shadow:0 4px 14px rgba(10,59,40,.15)}
+.sheet{flex:1;margin-top:-28px;background:#fff;border-radius:28px 28px 0 0;position:relative;padding:22px 20px 24px;overflow-y:auto;box-shadow:0 -8px 30px rgba(10,59,40,.08)}
+.timer{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:118px;height:118px;flex-shrink:0}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .t{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .t b{font-family:var(--display);font-size:32px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.ring .t small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.timer h2{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 6px;font-weight:800}
+.timer p{margin:0;color:var(--muted);font-size:14px;line-height:1.4}
+.progress{display:flex;gap:6px;margin:20px 0}
+.progress i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.progress i.on{background:var(--g500)}
+.rider{display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;background:var(--m50)}
+.rider .pic{width:50px;height:50px;border-radius:50%;background:var(--g300);display:grid;place-items:center;font-size:26px}
+.rider .who{flex:1}
+.rider .who strong{display:block}
+.rider .who small{color:var(--muted)}
+.rider .iconbtn{background:#fff;border:1.5px solid var(--line)}
+.summary{margin-top:14px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between}
+
+.notif{position:absolute;top:12px;left:12px;right:12px;z-index:20;background:rgba(255,255,255,.97);border-radius:22px;padding:14px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 40px rgba(10,59,40,.25);transform:translateY(-130%);transition:transform .45s cubic-bezier(.2,.9,.25,1.15);text-align:left;width:auto}
+.notif.show{transform:none}
+.notif .logo{width:42px;height:42px;border-radius:12px;background:var(--g700);color:#fff;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:20px;flex-shrink:0}
+.notif strong{display:block;font-size:15px}
+.notif span{font-size:14px;color:var(--muted)}
+.notif em{font-style:normal;font-size:12px;color:var(--muted);align-self:flex-start;margin-left:auto}
+
+/* arrived */
+.arrived{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 28px;background:var(--g700);color:#fff}
+.burst{width:120px;height:120px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:58px;margin-bottom:26px;animation:pop .5s cubic-bezier(.2,.9,.25,1.3)}
+@keyframes pop{from{transform:scale(.4)}to{transform:none}}
+@media (prefers-reduced-motion: reduce){.burst{animation:none}.notif{transition:none}}
+.arrived h1{font-family:var(--display);font-size:36px;line-height:1.02;font-weight:800;margin:0 0 10px}
+.arrived p{margin:0;opacity:.85;max-width:280px;line-height:1.5}
+.pin{display:flex;gap:8px;margin:26px 0 8px}
+.pin b{width:52px;height:62px;border-radius:14px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-family:var(--display);font-size:30px}
+.arrived small{opacity:.7}
+.arrived .cta{background:#fff;color:var(--g900);margin-top:30px}
+
+.stars{display:flex;gap:6px;justify-content:center;margin:18px 0}
+.stars button{font-size:38px;line-height:1;filter:grayscale(1);opacity:.35;transition:all .15s}
+.stars button.on{filter:none;opacity:1}
+.tips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+.toast{position:absolute;left:50%;bottom:96px;transform:translate(-50%,20px);background:var(--g900);color:#fff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:all .25s;pointer-events:none;z-index:30;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="aside">
+    <h1>Sprig</h1>
+    <p>A clickable food delivery prototype. Pick a restaurant, add dishes, place the order and watch your rider arrive.</p>
+    <p>Once the rider is 2 minutes away, the live countdown starts.</p>
+    <div class="speed">
+      <button class="switch" id="speedSwitch" role="switch" aria-checked="false" aria-label="Demo speed"></button>
+      <span>Demo speed (10× faster countdown)</span>
+    </div>
+  </div>
+  <div class="phone">
+    <div id="view"></div>
+    <button class="notif" id="notif" aria-live="polite">
+      <div class="logo">S</div>
+      <div><strong>Your rider is arriving soon</strong><span>Sam is about 2 min away</span></div>
+      <em>now</em>
+    </button>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+</div>
+
+<script>
+const ICON = {
+  back:'<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+  bag:'<svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>',
+  phone:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  chat:'<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'
+};
+
+const RESTAURANTS = [
+  {id:'gb', name:'Green Bowl Kitchen', cuisine:'Salads and grain bowls', cat:'Healthy', time:'15–20 min', rating:'4.8', fee:'Free delivery', emoji:'🥗', tint:'#CDEFD9', menu:[
+    {id:'gb1', name:'Avocado power bowl', desc:'Quinoa, avocado, chickpeas, greens, lemon tahini', price:9.5, emoji:'🥑'},
+    {id:'gb2', name:'Grilled chicken Caesar', desc:'Romaine, parmesan, sourdough croutons', price:10.25, emoji:'🥬'},
+    {id:'gb3', name:'Mango chia pot', desc:'Coconut milk chia with fresh mango', price:4.75, emoji:'🥭'},
+    {id:'gb4', name:'Cold-pressed green juice', desc:'Apple, cucumber, spinach, ginger', price:3.9, emoji:'🧃'}
+  ]},
+  {id:'th', name:'Tandoor House', cuisine:'Curries and kebabs', cat:'Curry', time:'20–25 min', rating:'4.7', fee:'$0.99 delivery', emoji:'🍛', tint:'#FFE9C7', menu:[
+    {id:'th1', name:'Butter chicken', desc:'Creamy tomato gravy, served with rice', price:11.5, emoji:'🍛'},
+    {id:'th2', name:'Garlic naan', desc:'Fresh from the tandoor, brushed with ghee', price:2.5, emoji:'🫓'},
+    {id:'th3', name:'Seekh kebab', desc:'Four skewers with mint chutney', price:8.75, emoji:'🍢'},
+    {id:'th4', name:'Mango lassi', desc:'Sweet yogurt drink', price:3.25, emoji:'🥛'}
+  ]},
+  {id:'ng', name:'Noodle Garden', cuisine:'Ramen and stir-fry', cat:'Asian', time:'18–22 min', rating:'4.6', fee:'Free delivery', emoji:'🍜', tint:'#FDE0DA', menu:[
+    {id:'ng1', name:'Spicy miso ramen', desc:'Pork belly, soft egg, scallions', price:12, emoji:'🍜'},
+    {id:'ng2', name:'Veg pad thai', desc:'Rice noodles, tofu, peanuts, lime', price:10.5, emoji:'🥢'},
+    {id:'ng3', name:'Steamed dumplings', desc:'Six chicken and chive dumplings', price:6.5, emoji:'🥟'},
+    {id:'ng4', name:'Iced jasmine tea', desc:'Lightly sweetened', price:2.75, emoji:'🧋'}
+  ]},
+  {id:'by', name:'Burger Yard', cuisine:'Smash burgers and fries', cat:'Burgers', time:'12–18 min', rating:'4.5', fee:'$1.49 delivery', emoji:'🍔', tint:'#E3EEFF', menu:[
+    {id:'by1', name:'Double smash burger', desc:'Two patties, cheddar, house sauce', price:11.25, emoji:'🍔'},
+    {id:'by2', name:'Crispy chicken burger', desc:'Buttermilk chicken, slaw, pickles', price:10.5, emoji:'🍗'},
+    {id:'by3', name:'Loaded fries', desc:'Cheese sauce, jalapeños, crispy onions', price:5.5, emoji:'🍟'},
+    {id:'by4', name:'Vanilla shake', desc:'Thick and cold', price:4.5, emoji:'🥤'}
+  ]}
+];
+const CATS = ['All','Healthy','Asian','Burgers','Curry'];
+const DELIVERY_FEE = 1.49, SERVICE = 0.6;
+
+const state = { rid:null, cart:{}, cat:'All', q:'', pay:'card', speed:1, rating:0, tip:1 };
+let timers = [], rafId = null;
+const view = document.getElementById('view');
+const notif = document.getElementById('notif');
+const money = n => '$' + n.toFixed(2);
+const findDish = id => RESTAURANTS.flatMap(r => r.menu).find(d => d.id === id);
+const cartCount = () => Object.values(state.cart).reduce((a,b) => a+b, 0);
+const subtotal = () => Object.entries(state.cart).reduce((s,[id,q]) => s + findDish(id).price*q, 0);
+const rest = () => RESTAURANTS.find(r => r.id === state.rid);
+
+function clearTimers(){ timers.forEach(clearTimeout); timers = []; if (rafId) cancelAnimationFrame(rafId); rafId = null; notif.classList.remove('show'); }
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1800); }
+
+function render(html, back){
+  clearTimers();
+  const el = document.createElement('div');
+  el.className = 'screen' + (back ? ' back' : '');
+  el.innerHTML = html;
+  view.replaceChildren(el);
+  return el;
+}
+
+/* ---------- Home ---------- */
+function home(back){
+  const el = render(`
+    <div class="scroll">
+      <div class="hero">
+        <div class="addr"><div><small>Delivering to</small><strong>Home, 12 Lake Road</strong></div><div class="avatar">AR</div></div>
+        <h1>Hungry? Lunch is a few taps away.</h1>
+        <label class="search">${ICON.search}<input id="q" type="search" placeholder="Search restaurants or dishes" value="${state.q}" aria-label="Search"></label>
+      </div>
+      <div class="chips" role="group" aria-label="Categories">
+        ${CATS.map(c => `<button class="chip" data-cat="${c}" aria-pressed="${c===state.cat}">${c}</button>`).join('')}
+      </div>
+      <div class="section-title">Near you</div>
+      <div class="rlist" id="rlist"></div>
+    </div>`, back);
+  const list = () => {
+    const q = state.q.trim().toLowerCase();
+    const items = RESTAURANTS.filter(r => (state.cat==='All' || r.cat===state.cat) &&
+      (!q || r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q) || r.menu.some(d => d.name.toLowerCase().includes(q))));
+    el.querySelector('#rlist').innerHTML = items.length ? items.map(r => `
+      <button class="rcard" data-r="${r.id}">
+        <div class="tile" style="background:${r.tint}">${r.emoji}</div>
+        <div><h3>${r.name}</h3><p>${r.cuisine}</p><div class="meta"><span>★ ${r.rating}</span><span>${r.time}</span><span>${r.fee}</span></div></div>
+      </button>`).join('') : `<div class="empty">Nothing matches that search. Try “ramen” or “burger”.</div>`;
+  };
+  list();
+  el.querySelector('#q').addEventListener('input', e => { state.q = e.target.value; list(); });
+  el.addEventListener('click', e => {
+    const c = e.target.closest('[data-cat]');
+    if (c){ state.cat = c.dataset.cat; el.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat===state.cat)); list(); }
+    const r = e.target.closest('[data-r]');
+    if (r){
+      if (state.rid && state.rid !== r.dataset.r && cartCount()) state.cart = {};
+      state.rid = r.dataset.r; restaurant();
+    }
+  });
+}
+
+/* ---------- Restaurant ---------- */
+function restaurant(back){
+  const r = rest();
+  const el = render(`
+    <div class="topbar"><button class="iconbtn" data-act="home" aria-label="Back">${ICON.back}</button><h2>Menu</h2></div>
+    <div class="scroll">
+      <div class="rhead" style="background:${r.tint}"><div class="big">${r.emoji}</div><h1>${r.name}</h1><p>★ ${r.rating}  ·  ${r.time}  ·  ${r.fee}</p></div>
+      <div class="menu" id="menu"></div>
+    </div>
+    <div class="bottombar" id="bar"></div>`, back);
+  const draw = () => {
+    el.querySelector('#menu').innerHTML = r.menu.map(d => {
+      const q = state.cart[d.id] || 0;
+      return `<div class="dish"><div class="em">${d.emoji}</div><div class="info"><h4>${d.name}</h4><p>${d.desc}</p><span class="price">${money(d.price)}</span></div>
+        ${q ? `<div class="stepper"><button data-dec="${d.id}" aria-label="Remove one">−</button><span>${q}</span><button data-inc="${d.id}" aria-label="Add one">+</button></div>`
+            : `<button class="add" data-inc="${d.id}" aria-label="Add ${d.name}">+</button>`}</div>`;
+    }).join('');
+    const n = cartCount();
+    el.querySelector('#bar').innerHTML = n ? `<button class="cta" data-act="cart"><span class="count">${n}</span><span>View cart</span><span>${money(subtotal())}</span></button>` : '';
+  };
+  draw();
+  el.addEventListener('click', e => {
+    const a = e.target.closest('[data-act]'); if (a) return a.dataset.act==='home' ? home(true) : cart();
+    const i = e.target.closest('[data-inc]'); if (i){ state.cart[i.dataset.inc] = (state.cart[i.dataset.inc]||0)+1; draw(); }
+    const d = e.target.closest('[data-dec]'); if (d){ const id = d.dataset.dec; state.cart[id]--; if (!state.cart[id]) delete state.cart[id]; draw(); }
+  });
+}
+
+/* ---------- Cart ---------- */
+function cart(back){
+  const r = rest();
+  const el = render(`
+    <div class="topbar"><button class="iconbtn" data-act="back" aria-label="Back">${ICON.back}</button><h2>Your order</h2></div>
+    <div class="scroll" style="padding-bottom:110px">
+      <div class="block" id="items"></div>
+      <div class="block"><h3>Deliver to</h3><div class="line"><span>🏠 Home, 12 Lake Road, Apt 4B</span></div><div class="line"><span class="muted">Leave at the door, ring the bell</span></div></div>
+      <div class="block" id="pay"></div>
+      <div class="block" id="totals"></div>
+    </div>
+    <div class="bottombar"><button class="cta center" data-act="place" id="placeBtn">Place order</button></div>`, back);
+  const draw = () => {
+    if (!cartCount()) return restaurant(true);
+    el.querySelector('#items').innerHTML = `<h3>${r.name}</h3>` + Object.entries(state.cart).map(([id,q]) => {
+      const d = findDish(id);
+      return `<div class="line"><span>${d.emoji} ${d.name}</span><div class="stepper"><button data-dec="${id}" aria-label="Remove one">−</button><span>${q}</span><button data-inc="${id}" aria-label="Add one">+</button></div></div>`;
+    }).join('');
+    el.querySelector('#pay').innerHTML = `<h3>Pay with</h3>` + [['card','💳','Visa ending 4242'],['cash','💵','Cash on delivery']].map(([k,i,t]) =>
+      `<button class="opt" role="radio" data-pay="${k}" aria-checked="${state.pay===k}"><span class="dot"></span><span>${i} ${t}</span></button>`).join('');
+    const s = subtotal();
+    el.querySelector('#totals').innerHTML = `
+      <div class="line"><span class="muted">Subtotal</span><span>${money(s)}</span></div>
+      <div class="line"><span class="muted">Delivery</span><span>${money(DELIVERY_FEE)}</span></div>
+      <div class="line"><span class="muted">Service fee</span><span>${money(SERVICE)}</span></div>
+      <div class="line total"><span>Total</span><span>${money(s+DELIVERY_FEE+SERVICE)}</span></div>`;
+    el.querySelector('#placeBtn').textContent = `Place order, ${money(s+DELIVERY_FEE+SERVICE)}`;
+  };
+  draw();
+  el.addEventListener('click', e => {
+    const a = e.target.closest('[data-act]');
+    if (a){ if (a.dataset.act==='back') return restaurant(true); if (a.dataset.act==='place') return placing(); }
+    const i = e.target.closest('[data-inc]'); if (i){ state.cart[i.dataset.inc]++; draw(); }
+    const d = e.target.closest('[data-dec]'); if (d){ const id = d.dataset.dec; state.cart[id]--; if (!state.cart[id]) delete state.cart[id]; draw(); }
+    const p = e.target.closest('[data-pay]'); if (p){ state.pay = p.dataset.pay; draw(); }
+  });
+}
+
+/* ---------- Order placed ---------- */
+function placing(){
+  const r = rest();
+  const steps = [['Order placed','We sent your order to ' + r.name],['Kitchen is cooking','Your food is being prepared'],['Rider picked it up','Sam is heading your way']];
+  const el = render(`
+    <div class="placing">
+      <h1>Order placed!</h1>
+      <p class="sub">Order #SP-2048 from ${r.name}</p>
+      <ol class="steps">${steps.map(([t,s],i) => `<li data-i="${i}"><span class="n">${i+1}</span><div><strong>${t}</strong><small>${s}</small></div></li>`).join('')}</ol>
+    </div>
+    <div class="bottombar"><button class="cta light center" data-act="skip">Track rider now</button></div>`);
+  const lis = el.querySelectorAll('.steps li');
+  const set = k => lis.forEach((li,i) => { li.className = i<k ? 'done' : i===k ? 'now' : ''; });
+  set(0);
+  const gap = 1300 / state.speed * (state.speed > 1 ? 3 : 1);
+  timers.push(setTimeout(() => set(1), gap), setTimeout(() => set(2), gap*2), setTimeout(tracking, gap*3));
+  el.querySelector('[data-act="skip"]').onclick = tracking;
+}
+
+/* ---------- Live tracking + countdown ---------- */
+function tracking(){
+  const TOTAL = 120, C = 2*Math.PI*52;
+  const el = render(`
+    <div class="map">
+      <svg viewBox="0 0 390 380" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="390" height="380" fill="#E7F5EC"/>
+        <g fill="#D3EDDC">
+          <rect x="20" y="30" width="110" height="80" rx="12"/><rect x="160" y="20" width="90" height="110" rx="12"/><rect x="280" y="40" width="100" height="70" rx="12"/>
+          <rect x="10" y="160" width="90" height="100" rx="12"/><rect x="230" y="170" width="140" height="70" rx="12"/><rect x="40" y="300" width="130" height="70" rx="12"/><rect x="250" y="280" width="120" height="90" rx="12"/>
+        </g>
+        <circle cx="150" cy="215" r="38" fill="#B7E4C7"/><circle cx="168" cy="200" r="22" fill="#A3DBB8"/>
+        <g stroke="#fff" stroke-width="16" stroke-linecap="round" fill="none">
+          <path d="M0 140 H390"/><path d="M140 0 V380"/><path d="M0 275 H390"/><path d="M265 0 V380"/>
+        </g>
+        <path id="route" d="M60 345 L60 275 L140 275 L140 140 L265 140 L265 70 L330 70" fill="none" stroke="#1DA462" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 12"/>
+        <path id="routeDone" d="M60 345 L60 275 L140 275 L140 140 L265 140 L265 70 L330 70" fill="none" stroke="#11704A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(60 345)"><circle r="14" fill="#fff"/><text text-anchor="middle" dy="6" font-size="16">${rest().emoji}</text></g>
+        <g transform="translate(330 70)"><circle r="20" fill="#1DA462" opacity=".2"><animate attributeName="r" values="14;26;14" dur="2s" repeatCount="indefinite"/></circle><circle r="15" fill="#0A3B28"/><text text-anchor="middle" dy="5" font-size="14">🏠</text></g>
+        <g id="rider"><circle r="19" fill="#fff" stroke="#1DA462" stroke-width="3"/><text text-anchor="middle" dy="7" font-size="20">🛵</text></g>
+      </svg>
+      <div class="topbar"><button class="iconbtn" data-act="home" aria-label="Back to home">${ICON.back}</button></div>
+    </div>
+    <div class="sheet">
+      <div class="timer">
+        <div class="ring">
+          <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" stroke="#E7F5EC" stroke-width="10" fill="none"/>
+          <circle id="arc" cx="60" cy="60" r="52" stroke="#1DA462" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
+          <div class="t"><div><b id="clock">2:00</b><small>min left</small></div></div>
+        </div>
+        <div><h2 id="status">Rider arriving soon</h2><p id="statusSub">Sam has your order and is about 2 minutes away.</p></div>
+      </div>
+      <div class="progress" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i id="p4"></i></div>
+      <div class="rider">
+        <div class="pic">🧑🏽</div>
+        <div class="who"><strong>Sam K.</strong><small>Green scooter, ★ 4.9</small></div>
+        <button class="iconbtn" data-act="chat" aria-label="Message rider">${ICON.chat}</button>
+        <button class="iconbtn" data-act="call" aria-label="Call rider">${ICON.phone}</button>
+      </div>
+      <div class="summary"><span>${cartCount()} items from ${rest().name}</span><span>${money(subtotal()+DELIVERY_FEE+SERVICE)}</span></div>
+    </div>`);
+
+  const route = el.querySelector('#route'), done = el.querySelector('#routeDone'), rider = el.querySelector('#rider');
+  const L = route.getTotalLength();
+  done.style.strokeDasharray = L; 
+  const placeRider = f => {
+    const p = route.getPointAtLength(L*f);
+    rider.setAttribute('transform', `translate(${p.x} ${p.y})`);
+    done.style.strokeDashoffset = L*(1-f);
+  };
+  placeRider(.25);
+
+  el.addEventListener('click', e => {
+    const a = e.target.closest('[data-act]'); if (!a) return;
+    if (a.dataset.act==='home') home(true);
+    if (a.dataset.act==='call') toast('Calling Sam…');
+    if (a.dataset.act==='chat') toast('Message sent: “Ring the bell please”');
+  });
+
+  // 1. Show the "arriving soon" alert, 2. then start the countdown
+  timers.push(setTimeout(() => notif.classList.add('show'), 500));
+  timers.push(setTimeout(() => notif.classList.remove('show'), 4200));
+  notif.onclick = () => notif.classList.remove('show');
+
+  const clock = el.querySelector('#clock'), arc = el.querySelector('#arc'), status = el.querySelector('#status'), sub = el.querySelector('#statusSub');
+  let left = TOTAL, last = null, lastShown = -1;
+  const tick = now => {
+    if (last === null) last = now;
+    left = Math.max(0, left - (now - last)/1000 * state.speed);
+    last = now;
+    const s = Math.ceil(left);
+    if (s !== lastShown){
+      lastShown = s;
+      clock.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+      if (s > 60){ status.textContent = 'Rider arriving soon'; sub.textContent = 'Sam has your order and is on the way.'; }
+      else if (s > 15){ status.textContent = 'Almost there'; sub.textContent = 'Less than a minute away. Get ready!'; }
+      else { status.textContent = 'Turning onto your street'; sub.textContent = 'Head to the door, Sam is right outside.'; el.querySelector('#p4').classList.add('on'); }
+    }
+    arc.setAttribute('stroke-dashoffset', C * (1 - left/TOTAL));
+    placeRider(.25 + .75*(1 - left/TOTAL));
+    if (left <= 0) { timers.push(setTimeout(arrived, 500)); return; }
+    rafId = requestAnimationFrame(tick);
+  };
+  timers.push(setTimeout(() => { last = null; rafId = requestAnimationFrame(tick); }, 1500));
+}
+
+/* ---------- Arrived ---------- */
+function arrived(){
+  const el = render(`
+    <div class="arrived">
+      <div class="burst">🛵</div>
+      <h1>Your rider is here!</h1>
+      <p>Sam is at your door with your order from ${rest().name}. Share this code to collect it.</p>
+      <div class="pin" aria-label="Delivery code 4 8 2 1"><b>4</b><b>8</b><b>2</b><b>1</b></div>
+      <small>Delivery code</small>
+      <button class="cta center" data-act="got">I got my order</button>
+    </div>`);
+  el.querySelector('[data-act="got"]').onclick = rate;
+}
+
+function rate(){
+  state.rating = 0;
+  const el = render(`
+    <div class="placing" style="text-align:center">
+      <div style="font-size:64px">😋</div>
+      <h1>Enjoy your meal</h1>
+      <p class="sub" style="margin-bottom:6px">How was your delivery with Sam?</p>
+      <div class="stars" role="group" aria-label="Rating">${[1,2,3,4,5].map(n => `<button data-star="${n}" aria-label="${n} star">⭐</button>`).join('')}</div>
+      <p class="sub" style="margin:10px 0 10px">Add a tip for Sam</p>
+      <div class="tips">${[0,1,2,3].map(t => `<button class="chip" data-tip="${t}" aria-pressed="${state.tip===t}">${t ? '$'+t : 'No tip'}</button>`).join('')}</div>
+    </div>
+    <div class="bottombar"><button class="cta center" data-act="done">Done</button></div>`);
+  el.addEventListener('click', e => {
+    const s = e.target.closest('[data-star]');
+    if (s){ state.rating = +s.dataset.star; el.querySelectorAll('[data-star]').forEach(b => b.classList.toggle('on', +b.dataset.star <= state.rating)); }
+    const t = e.target.closest('[data-tip]');
+    if (t){ state.tip = +t.dataset.tip; el.querySelectorAll('[data-tip]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.tip===state.tip)); }
+    if (e.target.closest('[data-act="done"]')){ state.cart = {}; state.rid = null; home(); toast('Thanks! Your feedback was sent'); }
+  });
+}
+
+/* demo speed toggle */
+const sw = document.getElementById('speedSwitch');
+sw.onclick = () => { const on = sw.getAttribute('aria-checked') !== 'true'; sw.setAttribute('aria-checked', on); state.speed = on ? 10 : 1; };
+
+home();
+</script>
+</body>
+</html>
